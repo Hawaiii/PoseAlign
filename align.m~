@@ -1,0 +1,45 @@
+data = csvread('dump1.log');
+vtk3_ver = 0
+orb_ver = 1 %EKF
+MAX_LIMIT = 16*100;
+
+big_mat = zeros(size(data,1)*16, 32);
+t_vtk3 = [];
+t_orb = [];
+tmp_idx = 0;
+cnt = 1;
+for i = 1:size(data,1)
+    if data(i, 2) == vtk3_ver
+        tmp_idx = data(i,3);
+        t_vtk3 = pose2transformation(data(i, 4:end));
+    else
+        if data(i,3) ~= tmp_idx,
+            tmp_idx = data(i,3);
+        else
+            if data(i,2) == orb_ver
+                t_orb = pose2transformation(data(i,4:end));
+                for k = 1:4
+                    for j = 1:4
+                        big_mat(cnt, :) = [zeros(1,4*(j-1)), t_vtk3(:,k)', zeros(1,4*(4-j)), zeros(1,4*(k-1)),-t_orb(j, :), zeros(1, 4*(4-k))];
+                        %big_mat = [big_mat; Arow];
+                        %big_mat(cnt, 4*(j-1)+1:4*j) = t_vtk3(:,k)';
+                        %big_mat(cnt, 4*(j-1)+16:4*j+16) = t_orb(j,:);
+                        cnt = cnt + 1;
+                    end
+                end
+            end
+        end
+    end
+   
+    
+    if mod(i,100) == 0
+        i
+    end
+end
+big_mat = big_mat(1:min(cnt-1,MAX_LIMIT),:);
+[U, S, V] = svd(big_mat);
+solu = V(:,end);
+orb2mocap = reshape(solu(1:16),4,4)';
+cam2headset = reshape(solu(17:end), 4,4);
+orb2mocap./orb2mocap(4,4)
+cam2headset./cam2headset(4,4`)
