@@ -10,8 +10,8 @@ t_orb_list = zeros(4,4,0);
 tmp_idx = 0;
 cnt = 1;
 i = 1;
-%while i < 100
-while i < size(data,1)
+while i < 100
+% while i < size(data,1)
     if data(i, 2) == vtk3_ver
         tmp_idx = data(i,3);
         t_vtk3 = pose2transformation(data(i, 4:end));
